@@ -30,6 +30,7 @@ import {
   Sparkles,
   Target,
   TrendingUp,
+  UserPlus,
   UserRound,
   Users,
   X,
@@ -39,12 +40,13 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type ScreenId =
-  | "overview" | "workforce" | "exposure" | "architecture" | "capability" | "profile"
+  | "overview" | "workforce" | "directory" | "exposure" | "architecture" | "capability" | "profile"
   | "future" | "mobility" | "learning" | "decision" | "impact" | "roadmap";
 
 const navigation: { id: ScreenId; label: string; short: string; icon: typeof LayoutDashboard }[] = [
   { id: "overview", label: "Executive Overview", short: "Overview", icon: LayoutDashboard },
   { id: "workforce", label: "Workforce Overview", short: "Workforce", icon: Users },
+  { id: "directory", label: "Employee Directory", short: "Directory", icon: UserPlus },
   { id: "exposure", label: "AI Exposure Analysis", short: "AI Exposure", icon: Bot },
   { id: "architecture", label: "Job & Work Model", short: "Job Model", icon: Network },
   { id: "capability", label: "Capability Library", short: "Capabilities", icon: BookOpen },
