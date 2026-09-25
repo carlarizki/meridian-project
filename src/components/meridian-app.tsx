@@ -140,6 +140,92 @@ function Workforce({ region, setRegion }: { region: string; setRegion: (v: strin
   </>;
 }
 
+type Employee = { id: string; name: string; role: string; family: string; region: string; level: string; education: string; age: number; years: number; completeness: number; exposure: "High" | "Medium" | "Low" };
+
+const seedEmployees: Employee[] = [
+  { id: "EMP-10492", name: "Budi Santoso", role: "Field Technician (Metering)", family: "Operations", region: "Regional 1", level: "L3", education: "D3 Teknik Elektro", age: 34, years: 8, completeness: 78, exposure: "High" },
+  { id: "EMP-22510", name: "Siti Rahma", role: "Distribution Engineer", family: "Engineering", region: "Regional 2", level: "L4", education: "S1 Teknik Elektro", age: 38, years: 12, completeness: 86, exposure: "Medium" },
+  { id: "EMP-33018", name: "Andi Wijaya", role: "Customer Service Officer", family: "Commercial", region: "Regional 3", level: "L2", education: "S1 Manajemen", age: 29, years: 5, completeness: 64, exposure: "Medium" },
+  { id: "EMP-41207", name: "Dewi Lestari", role: "HR Business Partner", family: "Human Capital", region: "Head Office", level: "L4", education: "S1 Psikologi", age: 41, years: 15, completeness: 91, exposure: "Low" },
+  { id: "EMP-50883", name: "Rizky Pratama", role: "Meter Reader", family: "Operations", region: "Regional 4", level: "L2", education: "SMK Listrik", age: 27, years: 4, completeness: 52, exposure: "High" },
+  { id: "EMP-61145", name: "Maya Kusuma", role: "Financial Analyst", family: "Finance", region: "Head Office", level: "L3", education: "S1 Akuntansi", age: 33, years: 9, completeness: 83, exposure: "Medium" },
+  { id: "EMP-70219", name: "Agus Setiawan", role: "SCADA Operator", family: "IT & Digital", region: "Regional 5", level: "L3", education: "D3 Teknik Informatika", age: 36, years: 10, completeness: 74, exposure: "Low" },
+  { id: "EMP-81556", name: "Nur Hidayah", role: "Substation Technician", family: "Operations", region: "Regional 6", level: "L3", education: "D3 Teknik Elektro", age: 35, years: 9, completeness: 69, exposure: "High" },
+];
+
+const emptyEmployeeForm = { name: "", id: "", role: "", family: "Operations", region: "Regional 1", level: "L1", education: "", age: "", years: "" };
+
+function Directory() {
+  const [employees, setEmployees] = useState<Employee[]>(seedEmployees);
+  const [query, setQuery] = useState("");
+  const [familyFilter, setFamilyFilter] = useState("All Families");
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(emptyEmployeeForm);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [added, setAdded] = useState<string | null>(null);
+
+  const filtered = employees.filter((e) =>
+    (familyFilter === "All Families" || e.family === familyFilter) &&
+    (e.name.toLowerCase().includes(query.toLowerCase()) || e.id.toLowerCase().includes(query.toLowerCase()) || e.role.toLowerCase().includes(query.toLowerCase()))
+  );
+
+  const set = (key: keyof typeof emptyEmployeeForm) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
+
+  const submit = () => {
+    const problems: string[] = [];
+    if (form.name.trim().length < 3) problems.push("Nama minimal 3 karakter.");
+    if (!/^EMP-\d{4,6}$/.test(form.id.trim())) problems.push("Employee ID harus berformat EMP-XXXXX.");
+    if (employees.some((e) => e.id === form.id.trim())) problems.push("Employee ID sudah terdaftar.");
+    if (form.role.trim().length < 3) problems.push("Jabatan wajib diisi.");
+    const age = Number(form.age);
+    if (!Number.isInteger(age) || age < 18 || age > 65) problems.push("Usia harus antara 18–65 tahun.");
+    const years = Number(form.years);
+    if (!Number.isInteger(years) || years < 0 || years > 45) problems.push("Masa kerja harus antara 0–45 tahun.");
+    setErrors(problems);
+    if (problems.length) return;
+    const highRisk = form.family === "Operations" || form.family === "Finance";
+    setEmployees((list) => [{ id: form.id.trim().toUpperCase(), name: form.name.trim(), role: form.role.trim(), family: form.family, region: form.region, level: form.level, education: form.education.trim() || "—", age, years, completeness: 45, exposure: highRisk ? "High" : "Medium" }, ...list]);
+    setAdded(form.name.trim());
+    setForm(emptyEmployeeForm);
+    setShowForm(false);
+  };
+
+  return <>
+    <PageHeader title="Employee Directory" subtitle="Kelola data karyawan, tinjau kelengkapan data, dan tambahkan karyawan baru.">
+      <Button onClick={() => { setShowForm(!showForm); setAdded(null); }}><UserPlus className="size-4" /> Tambah Karyawan</Button>
+    </PageHeader>
+    {added && <div className="insight success-note"><BadgeCheck className="size-4" /><p><strong>{added}</strong> berhasil ditambahkan. Data awal bersifat inferred — lengkapi bukti measured sebelum keputusan kritis.</p></div>}
+    {showForm && <section className="panel employee-form">
+      <div className="panel-head"><div><h2>Input karyawan baru</h2><p>Data masuk sebagai profil baru dengan status evidence inferred</p></div><Button variant="ghost" size="icon" onClick={() => setShowForm(false)} aria-label="Tutup form"><X /></Button></div>
+      <div className="form-grid">
+        <label><span>Nama lengkap *</span><input value={form.name} onChange={(e) => set("name")(e.target.value)} placeholder="cth. Bambang Hartono" maxLength={100} /></label>
+        <label><span>Employee ID *</span><input value={form.id} onChange={(e) => set("id")(e.target.value)} placeholder="EMP-XXXXX" maxLength={10} /></label>
+        <label><span>Jabatan *</span><input value={form.role} onChange={(e) => set("role")(e.target.value)} placeholder="cth. Field Technician" maxLength={80} /></label>
+        <label><span>Job family</span><select value={form.family} onChange={(e) => set("family")(e.target.value)}>{families.map((f) => <option key={f.name}>{f.name}</option>)}</select></label>
+        <label><span>Unit regional</span><select value={form.region} onChange={(e) => set("region")(e.target.value)}>{["Regional 1", "Regional 2", "Regional 3", "Regional 4", "Regional 5", "Regional 6", "Head Office"].map((r) => <option key={r}>{r}</option>)}</select></label>
+        <label><span>Level</span><select value={form.level} onChange={(e) => set("level")(e.target.value)}>{["L1", "L2", "L3", "L4", "L5"].map((l) => <option key={l}>{l}</option>)}</select></label>
+        <label><span>Pendidikan</span><input value={form.education} onChange={(e) => set("education")(e.target.value)} placeholder="cth. D3 Teknik Elektro" maxLength={80} /></label>
+        <label><span>Usia *</span><input type="number" value={form.age} onChange={(e) => set("age")(e.target.value)} placeholder="cth. 32" min={18} max={65} /></label>
+        <label><span>Masa kerja (tahun) *</span><input type="number" value={form.years} onChange={(e) => set("years")(e.target.value)} placeholder="cth. 6" min={0} max={45} /></label>
+      </div>
+      {errors.length > 0 && <div className="form-errors">{errors.map((err) => <p key={err}><X className="size-3" />{err}</p>)}</div>}
+      <div className="form-actions"><Button variant="outline" onClick={() => { setShowForm(false); setErrors([]); }}>Batal</Button><Button onClick={submit}><Check className="size-4" /> Simpan karyawan</Button></div>
+    </section>}
+    <section className="panel">
+      <div className="panel-head"><div><h2>Daftar karyawan</h2><p>{filtered.length} dari {employees.length} profil ditampilkan</p></div><div className="directory-tools"><div className="search"><Search className="size-4" /><input aria-label="Cari karyawan" placeholder="Cari nama, ID, jabatan..." value={query} onChange={(e) => setQuery(e.target.value)} /></div><SelectControl value={familyFilter} onChange={setFamilyFilter} label="Filter job family" options={["All Families", ...families.map((f) => f.name)]} /></div></div>
+      <div className="table-wrap"><table><thead><tr><th>Karyawan</th><th>Jabatan</th><th>Job Family</th><th>Region</th><th>Level</th><th>Kelengkapan</th><th>AI Exposure</th></tr></thead><tbody>
+        {filtered.map((e) => <tr key={e.id}>
+          <td><div className="emp-cell"><span className="avatar tiny">{e.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}</span><div><strong>{e.name}</strong><small>{e.id}</small></div></div></td>
+          <td>{e.role}</td><td>{e.family}</td><td>{e.region}</td><td><Badge tone="neutral">{e.level}</Badge></td>
+          <td><div className="mini-progress"><i><b style={{ width: `${e.completeness}%` }} /></i><span>{e.completeness}%</span></div></td>
+          <td><Badge tone={e.exposure === "High" ? "bad" : e.exposure === "Medium" ? "warn" : "good"}>{e.exposure}</Badge></td>
+        </tr>)}
+        {filtered.length === 0 && <tr><td colSpan={7} className="empty-row">Tidak ada karyawan yang cocok dengan pencarian.</td></tr>}
+      </tbody></table></div>
+    </section>
+  </>;
+}
+
 function Exposure({ region, setRegion }: { region: string; setRegion: (v: string) => void }) {
   return <><PageHeader title="AI Exposure Analysis" subtitle="Assess how each job family can be augmented or automated by AI."><SelectControl value={region} onChange={setRegion} label="Regional unit" options={["All Units", "Regional 1", "Regional 2", "Regional 3", "Regional 4", "Regional 5", "Regional 6"]}/></PageHeader>
     <div className="metric-grid three"><Metric icon={Activity} label="High Exposure" value="13,000" note="25% of workforce" tone="red"/><Metric icon={Gauge} label="Medium Exposure" value="20,800" note="40% of workforce" tone="amber"/><Metric icon={ShieldCheck} label="Low Exposure" value="18,200" note="35% of workforce" tone="green"/></div>
@@ -225,7 +311,7 @@ export function MeridianApp() {
   const current = navigation.find((item) => item.id === screen) ?? navigation[0];
   const go = (id: ScreenId) => { setScreen(id); setMobileOpen(false); window.scrollTo({top:0,behavior:"smooth"}); };
   const screens: Record<ScreenId, React.ReactNode> = {
-    overview: <Overview go={go}/>, workforce: <Workforce region={region} setRegion={setRegion}/>, exposure: <Exposure region={region} setRegion={setRegion}/>, architecture: <Architecture/>, capability: <Capability/>, profile: <Profile inferred={inferred} setInferred={setInferred}/>, future: <FutureRoles go={go}/>, mobility: <Mobility go={go}/>, learning: <Learning go={go}/>, decision: <Decision/>, impact: <Impact/>, roadmap: <Roadmap/>,
+    overview: <Overview go={go}/>, workforce: <Workforce region={region} setRegion={setRegion}/>, directory: <Directory/>, exposure: <Exposure region={region} setRegion={setRegion}/>, architecture: <Architecture/>, capability: <Capability/>, profile: <Profile inferred={inferred} setInferred={setInferred}/>, future: <FutureRoles go={go}/>, mobility: <Mobility go={go}/>, learning: <Learning go={go}/>, decision: <Decision/>, impact: <Impact/>, roadmap: <Roadmap/>,
   };
   return <div className="app-shell"><aside className={cn("sidebar", collapsed && "collapsed", mobileOpen && "mobile-open")}><div className="brand"><div className="brand-mark"><Zap/></div>{!collapsed && <div><strong>Meridian</strong><span>WORKFORCE INTELLIGENCE</span></div>}<Button variant="ghost" size="icon" className="mobile-close" onClick={()=>setMobileOpen(false)} aria-label="Close navigation"><X/></Button></div><nav>{navigation.map((item,index)=><button key={item.id} onClick={()=>go(item.id)} className={screen===item.id?"active":""} title={item.label}><item.icon/><span>{collapsed?"":item.short}</span>{!collapsed && <small>{String(index+1).padStart(2,"0")}</small>}</button>)}</nav><div className="sidebar-foot"><div className="status-dot"/>{!collapsed&&<div><strong>Prototype environment</strong><span>Mock data · Sep 2026</span></div>}</div></aside>
   <div className="main"><header className="topbar"><div className="topbar-left"><Button variant="ghost" size="icon" onClick={()=>setMobileOpen(true)} className="mobile-menu" aria-label="Open navigation"><Menu/></Button><Button variant="ghost" size="icon" onClick={()=>setCollapsed(!collapsed)} className="desktop-collapse" aria-label="Toggle sidebar">{collapsed?<PanelLeftOpen/>:<PanelLeftClose/>}</Button><div className="crumb"><span>Project Meridian</span><ChevronRight/><strong>{current?.short}</strong></div></div><div className="topbar-right"><Badge tone="good"><span className="live-dot"/> EXECUTIVE PROTOTYPE</Badge><div className="director"><div>MR</div><span><strong>Maya R.</strong><small>Director HC</small></span></div></div></header><main key={screen} className="content">{screens[screen]}</main></div>{mobileOpen&&<button className="scrim" onClick={()=>setMobileOpen(false)} aria-label="Close navigation overlay"/>}</div>;
