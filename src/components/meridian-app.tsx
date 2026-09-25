@@ -40,15 +40,34 @@ function Overview({ go }: { go: (id: ScreenId) => void }) {
   </>;
 }
 
-function Roster({ filter, setFilter, selectEmployee, go }: { filter: "All" | Decision; setFilter: (value: "All" | Decision) => void; selectEmployee: (employee: PilotEmployee) => void; go: (id: ScreenId) => void }) {
+function Roster({ employees, addEmployee, filter, setFilter, selectEmployee, go }: { employees: PilotEmployee[]; addEmployee: (employee: PilotEmployee) => void; filter: "All" | Decision; setFilter: (value: "All" | Decision) => void; selectEmployee: (employee: PilotEmployee) => void; go: (id: ScreenId) => void }) {
   const [query, setQuery] = useState("");
-  const filtered = useMemo(() => pilotEmployees.filter((employee) => (filter === "All" || getDecision(employee)?.label === filter) && [employee.name, employee.id, employee.role].some((value) => value.toLowerCase().includes(query.toLowerCase()))), [filter, query]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ id: "", name: "", role: "", region: "Regional 1" });
+  const [errors, setErrors] = useState<string[]>([]);
+  const filtered = useMemo(() => employees.filter((employee) => (filter === "All" || getDecision(employee)?.label === filter) && [employee.name, employee.id, employee.role].some((value) => value.toLowerCase().includes(query.toLowerCase()))), [employees, filter, query]);
   const open = (employee: PilotEmployee) => { selectEmployee(employee); go("detail"); };
+  const submit = () => {
+    const problems: string[] = [];
+    const id = form.id.trim().toUpperCase();
+    if (!/^EMP-\d{4,6}$/.test(id)) problems.push("Employee ID harus berformat EMP-XXXX.");
+    if (employees.some((employee) => employee.id === id)) problems.push("Employee ID sudah terdaftar.");
+    if (form.name.trim().length < 3) problems.push("Nama minimal 3 karakter.");
+    if (form.role.trim().length < 3) problems.push("Peran wajib diisi.");
+    setErrors(problems);
+    if (problems.length) return;
+    addEmployee({ id, name: form.name.trim(), role: form.role.trim(), region: form.region, exposure: 0, fit: null, feasibility: null, evidence: "Unknown", target: null });
+    setForm({ id: "", name: "", role: "", region: "Regional 1" });
+    setShowForm(false);
+    setFilter("Further Assessment");
+  };
   return <><PageHeader title="Roster / People" subtitle="24-record pilot sample · proportions approximate the 6,000-person population."><Badge tone="info">SAMPLE, NOT FULL POPULATION</Badge></PageHeader>
+    <div className="roster-add"><Button onClick={() => setShowForm((value) => !value)}><UserPlus className="size-4"/> Tambah karyawan</Button></div>
+    {showForm && <section className="panel employee-form"><div className="panel-head"><div><h2>Input karyawan pilot</h2><p>Profil baru otomatis masuk ke Further Assessment sampai bukti dilengkapi.</p></div><Button variant="ghost" size="icon" onClick={() => setShowForm(false)} aria-label="Tutup form"><X/></Button></div><div className="form-grid"><label><span>Employee ID *</span><input value={form.id} maxLength={10} placeholder="EMP-XXXX" onChange={(event) => setForm((value) => ({...value, id:event.target.value}))}/></label><label><span>Nama lengkap *</span><input value={form.name} maxLength={100} placeholder="Nama karyawan" onChange={(event) => setForm((value) => ({...value, name:event.target.value}))}/></label><label><span>Peran lapangan *</span><input value={form.role} maxLength={80} placeholder="Teknisi Pencatat Meter" onChange={(event) => setForm((value) => ({...value, role:event.target.value}))}/></label><label><span>Unit regional</span><select value={form.region} onChange={(event) => setForm((value) => ({...value, region:event.target.value}))}>{[1,2,3,4,5,6].map((number) => <option key={number}>Regional {number}</option>)}</select></label></div>{errors.length > 0 && <div className="form-errors">{errors.map((error) => <p key={error}><X className="size-3"/>{error}</p>)}</div>}<div className="form-actions"><Button variant="outline" onClick={() => setShowForm(false)}>Batal</Button><Button onClick={submit}><Check className="size-4"/> Simpan karyawan</Button></div></section>}
     <section className="panel roster-panel"><div className="roster-tools"><div className="search"><Search className="size-4"/><input aria-label="Cari karyawan" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari nama, ID, atau peran..."/></div><div className="filter-chips" aria-label="Filter decision category"><Button size="sm" variant={filter === "All" ? "default" : "outline"} onClick={() => setFilter("All")}>All · 24</Button>{populationOutcomes.map((item) => <Button key={item.label} size="sm" variant={filter === item.label ? "default" : "outline"} onClick={() => setFilter(item.label)}>{item.label}</Button>)}</div></div>
       <div className="table-wrap"><table><thead><tr><th>Employee</th><th>Current role</th><th>Exposure</th><th>Mobility fit</th><th>Feasibility</th><th>Evidence</th><th>Decision</th><th/></tr></thead><tbody>{filtered.map((employee) => { const decision = getDecision(employee)?.label ?? "Reskill"; const insufficient = employee.evidence === "Low" || employee.evidence === "Unknown"; return <tr key={employee.id}><td><div className="emp-cell"><span className="avatar tiny">{initials(employee.name)}</span><div><strong>{employee.name}</strong><small>{employee.id} · {employee.region}</small></div></div></td><td>{employee.role}</td><td><strong>{employee.exposure}%</strong></td><td>{insufficient ? <span className="insufficient">Data tidak cukup</span> : `${employee.fit}%`}</td><td>{insufficient ? <span className="insufficient">Data tidak cukup</span> : employee.feasibility}</td><td><Badge tone={employee.evidence === "High" ? "good" : employee.evidence === "Medium" ? "warn" : "bad"}>{employee.evidence}</Badge></td><td><Badge tone={decisionTone(decision)}>{decision}</Badge></td><td><Button variant="ghost" size="icon" onClick={() => open(employee)} aria-label={`Buka profil ${employee.name}`}><ChevronRight/></Button></td></tr>; })}{filtered.length === 0 && <tr><td colSpan={8} className="empty-row">Tidak ada karyawan pada filter ini.</td></tr>}</tbody></table></div>
     </section>
-    <section className="add-note"><UserPlus/><div><strong>Employee intake retained</strong><p>New records enter with Unknown evidence and must complete assessment before a pathway recommendation.</p></div></section>
+    <section className="add-note"><UserPlus/><div><strong>Evidence-safe intake</strong><p>New records enter with Unknown evidence and must complete assessment before a pathway recommendation.</p></div></section>
   </>;
 }
 
@@ -95,12 +114,13 @@ export function MeridianApp() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [selected, setSelected] = useState(pilotEmployees[0]);
+  const [employees, setEmployees] = useState<PilotEmployee[]>(pilotEmployees);
   const [filter, setFilter] = useState<"All" | Decision>("All");
   const [detailTab, setDetailTab] = useState<DetailTab>("profile");
   if (!selected) return null;
   const current = navigation.find((item) => item.id === screen) ?? navigation[0];
   const go = (id: ScreenId) => { setScreen(id); setMobileOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  const screens: Record<ScreenId, ReactNode> = { overview: <Overview go={go}/>, roster: <Roster filter={filter} setFilter={setFilter} selectEmployee={setSelected} go={go}/>, detail: <EmployeeDetail employee={selected} go={go} tab={detailTab} setTab={setDetailTab}/>, decision: <DecisionEngine employee={selected} go={go}/>, impact: <Impact/> };
+  const screens: Record<ScreenId, ReactNode> = { overview: <Overview go={go}/>, roster: <Roster employees={employees} addEmployee={(employee) => setEmployees((list) => [employee, ...list])} filter={filter} setFilter={setFilter} selectEmployee={setSelected} go={go}/>, detail: <EmployeeDetail employee={selected} go={go} tab={detailTab} setTab={setDetailTab}/>, decision: <DecisionEngine employee={selected} go={go}/>, impact: <Impact/> };
   return <div className="app-shell"><aside className={cn("sidebar", collapsed && "collapsed", mobileOpen && "mobile-open")}><div className="brand"><div className="brand-mark"><Zap/></div>{!collapsed && <div><strong>Meridian</strong><span>FIELD METERING PILOT</span></div>}<Button variant="ghost" size="icon" className="mobile-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X/></Button></div><nav>{navigation.map((item, index) => <Button variant="ghost" key={item.id} onClick={() => go(item.id)} className={screen === item.id ? "active" : ""} title={item.label}><item.icon/><span>{collapsed ? "" : item.label}</span>{!collapsed && <small>{String(index + 1).padStart(2,"0")}</small>}</Button>)}</nav><div className="sidebar-foot"><div className="status-dot"/>{!collapsed && <div><strong>Validated pilot scope</strong><span>24 sample records · Sep 2026</span></div>}</div></aside>
     <div className="main"><header className="topbar"><div className="topbar-left"><Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} className="mobile-menu" aria-label="Open navigation"><Menu/></Button><Button variant="ghost" size="icon" onClick={() => setCollapsed(!collapsed)} className="desktop-collapse" aria-label="Toggle sidebar">{collapsed ? <PanelLeftOpen/> : <PanelLeftClose/>}</Button><div className="crumb"><span>Project Meridian</span><ChevronRight/><strong>{current?.label}</strong></div></div><div className="topbar-right"><Badge tone="good"><span className="live-dot"/> PILOT · 6,000 PEOPLE</Badge><div className="director"><div>HR</div><span><strong>People Ops Lead</strong><small>Field Metering Pilot</small></span></div></div></header><main key={screen} className="content">{screens[screen]}</main></div>{mobileOpen && <Button variant="ghost" className="scrim" onClick={() => setMobileOpen(false)} aria-label="Close navigation overlay"/>}</div>;
 }
