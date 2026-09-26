@@ -1,7 +1,7 @@
 # Project Meridian Prototype
 
-- [x] Build a shared executive shell with interactive navigation for all 12 screens.
-- [x] Implement workforce, exposure, capability, profile, mobility, learning, decision, impact, and roadmap views.
-- [x] Add regional filtering, evidence toggles, talent inspection, role selection, and approval state.
-- [x] Verify desktop and mobile rendering, interactions, and production build status.
-- [x] Add and verify an employee directory with search, filters, and validated employee entry.
+- [ ] Consolidate the application into the 10 brief-aligned primary modules; keep the 90-day plan as an in-app resource and omit Executive Deck.
+- [ ] Make the 4,200 work-displacement-to-transition-portfolio journey the central executive AHA moment.
+- [ ] Add consistent cohort calculations, working simulator controls, evidence governance, and simulated human-review submission.
+- [ ] Add transparent pilot economics, assumptions, sensitivity, and Day 30/60/90 governance outputs.
+- [ ] Apply the dark-slate executive visual system and verify the primary journey on desktop and usable mobile.
