@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Project architecture
+
+- Keep TanStack Start as the application shell, with a single interactive `/` executive prototype whose 10 primary modules share one calculation model; this preserves the required framework while making all scenario outputs reconcile.
