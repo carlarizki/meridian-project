@@ -38,25 +38,23 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { calculatePortfolio, DEFAULT_SCENARIO, formatCount, type MeridianScenario } from "@/lib/meridian-model";
 
 type ScreenId =
-  | "overview" | "workforce" | "directory" | "exposure" | "architecture" | "capability" | "profile"
+  | "workforce" | "exposure" | "architecture" | "capability" | "people" | "profile"
   | "future" | "mobility" | "learning" | "decision" | "impact" | "roadmap";
 
 const navigation: { id: ScreenId; label: string; short: string; icon: typeof LayoutDashboard }[] = [
-  { id: "overview", label: "Executive Overview", short: "Overview", icon: LayoutDashboard },
   { id: "workforce", label: "Workforce Overview", short: "Workforce", icon: Users },
-  { id: "directory", label: "Employee Directory", short: "Directory", icon: UserPlus },
   { id: "exposure", label: "AI Exposure Analysis", short: "AI Exposure", icon: Bot },
   { id: "architecture", label: "Job & Work Model", short: "Job Model", icon: Network },
   { id: "capability", label: "Capability Library", short: "Capabilities", icon: BookOpen },
-  { id: "profile", label: "Employee Profile", short: "Profile", icon: UserRound },
+  { id: "people", label: "People & Evidence", short: "People", icon: UserRound },
   { id: "future", label: "Future Work & Roles", short: "Future Roles", icon: BriefcaseBusiness },
   { id: "mobility", label: "Mobility Analysis", short: "Mobility", icon: RouteIcon },
   { id: "learning", label: "Pathway & Learning", short: "Learning", icon: GraduationCap },
   { id: "decision", label: "Decision Output", short: "Decision", icon: BadgeCheck },
   { id: "impact", label: "Impact & Business Case", short: "Impact", icon: CircleDollarSign },
-  { id: "roadmap", label: "90-Day Plan", short: "90-Day Plan", icon: Target },
 ];
 
 const families = [
